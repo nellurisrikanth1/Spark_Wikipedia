@@ -20,7 +20,7 @@ object WikipediaRanking {
     "JavaScript", "Java", "PHP", "Python", "C#", "C++", "Ruby", "CSS",
     "Objective-C", "Perl", "Scala", "Haskell", "MATLAB", "Clojure", "Groovy")
 
-  val conf: SparkConf = new SparkConf().setAppName("WikipediaRanking")
+  val conf: SparkConf = new SparkConf().setAppName("WikipediaRanking").setMaster("local[2]")
   val sc: SparkContext = new SparkContext(conf)
   // Hint: use a combination of `sc.textFile`, `WikipediaData.filePath` and `WikipediaData.parse`
   val wikiRdd: RDD[WikipediaArticle] = sc.textFile(WikipediaData.filePath).map(WikipediaData.parse)
@@ -29,7 +29,7 @@ object WikipediaRanking {
     * Hint1: consider using method `aggregate` on RDD[T].
     * Hint2: consider using method `mentionsLanguage` on `WikipediaArticle`
     */
-  def occurrencesOfLang(lang: String, rdd: RDD[WikipediaArticle]): Int = rdd.aggregate(0)((x, y) => if (y.mentionsLanguage(lang)) x else x + 1, _ + _)
+  def occurrencesOfLang(lang: String, rdd: RDD[WikipediaArticle]): Int = rdd.aggregate(0)((x, y) => if (y.mentionsLanguage(lang)) x + 1 else x, _ + _)
 
   /* (1) Use `occurrencesOfLang` to compute the ranking of the languages
    *     (`val langs`) by determining the number of Wikipedia articles that
@@ -45,7 +45,7 @@ object WikipediaRanking {
    * to the Wikipedia pages in which it occurs.
    */
   def makeIndex(langs: List[String], rdd: RDD[WikipediaArticle]): RDD[(String, Iterable[WikipediaArticle])] =
-    rdd.map(wa => (langs.filter(l => wa.mentionsLanguage(l)).head, wa)).groupByKey
+    rdd.flatMap(wa => langs.filter(l => wa.mentionsLanguage(l)).map(l => (l, wa))).groupByKey
 
   /* (2) Compute the language ranking again, but now using the inverted index. Can you notice
    *     a performance improvement?
