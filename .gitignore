@@ -1,2 +1,6 @@
 *.class
 *.log
+.idea/*
+project/target/*
+target/*
+src/main/resources/wikipedia/wikipedia.dat
